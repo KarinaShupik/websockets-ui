@@ -6,6 +6,7 @@ import { IUser, MessageType, WS } from '../helpers/types';
 import { heartbeat } from '../helpers/isAlive';
 import storage from '../helpers/storage';
 import { registerUser } from '../helpers/commands/reg';
+import { createRoom } from '../helpers/commands/createRoom';
 
 //const port = process.env['WS_PORT'];
 const WS_PORT = 3000
@@ -35,6 +36,13 @@ wss.on("connection", (ws: WS) => {
           sendMessage(ws, MessageType.update_room, storage.rooms);
           sendMessage(ws, MessageType.update_winners, storage.winners);
         }
+
+        if (message.type === MessageType.create_room) {
+            createRoom(ws.user.name, ws.user.userId!);
+            wss.clients.forEach((client) => {
+              sendMessage(client as WS, MessageType.update_room, storage.rooms);
+            });
+          }
   
         
       } catch (error) {
