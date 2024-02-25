@@ -7,6 +7,7 @@ import { heartbeat } from '../helpers/isAlive';
 import storage from '../helpers/storage';
 import { registerUser } from '../helpers/commands/reg';
 import { createRoom } from '../helpers/commands/createRoom';
+import { addUserToRoom } from '../helpers/commands/addUserToRoom';
 
 //const port = process.env['WS_PORT'];
 const WS_PORT = 3000
@@ -44,6 +45,22 @@ wss.on("connection", (ws: WS) => {
             });
           }
   
+        if (message.type === MessageType.add_user_to_room) {
+            const { indexRoom } = message.data as { indexRoom: number };
+            const { gameId, gameUserIds } = addUserToRoom(indexRoom, ws.user.userId!);
+    
+            wss.clients.forEach((client) => {
+              const player = client as WS;
+              if (!gameUserIds.some((id) => id === player.user.userId)) {
+                return;
+              }
+              sendMessage(player, MessageType.create_game, {
+                idGame: gameId,
+                idPlayer: gameUserIds.find((id) => id !== ws.user.userId!),
+              });
+              sendMessage(player, MessageType.update_room, storage.rooms);
+            });
+        }
         
       } catch (error) {
         let errorMessage;
