@@ -13,10 +13,9 @@ import { playersAttack } from '../helpers/commands/playerAttack';
 import { win } from '../helpers/commands/win';
 import { clearSession } from '../helpers/clearSession';
 
-//const port = process.env['WS_PORT'];
-const WS_PORT = 3000
+const WS_PORT = Number(process.env.PORT);
 
-const wss = new WebSocket.Server({ port: WS_PORT });
+const wss = new WebSocket.Server({ port: WS_PORT});
 
 wss.on("connection", (ws: WS) => {
 

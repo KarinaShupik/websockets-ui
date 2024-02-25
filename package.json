@@ -3,7 +3,6 @@
     "version": "1.0.0",
     "description": "Template for the WebSocket remote control task",
     "main": "index.js",
-    
     "scripts": {
         "start": "tsc && node dist/app.js",
         "start:dev": "nodemon - exec 'ts-node' src/index.ts"
@@ -13,6 +12,8 @@
     "license": "ISC",
     "devDependencies": {
         "@types/node": "^20.11.19",
+        "@types/ws": "^8.5.10",
+        "dotenv": "^16.4.5",
         "nodemon": "^2.0.22",
         "ts-node": "^10.9.2",
         "typescript": "^5.3.3"
