@@ -2,13 +2,15 @@ import 'dotenv/config';
 import WebSocket from 'ws';
 import { parseMessage, sendMessage } from '../helpers/message';
 import { interval } from '../helpers/timer';
-import { IShip, IUser, MessageType, WS } from '../helpers/types';
+import { IAttackResponse, IShip, IUser, MessageType, WS } from '../helpers/types';
 import { heartbeat } from '../helpers/isAlive';
 import storage from '../helpers/storage';
 import { registerUser } from '../helpers/commands/reg';
 import { createRoom } from '../helpers/commands/createRoom';
 import { addUserToRoom } from '../helpers/commands/addUserToRoom';
 import { addShips } from '../helpers/commands/addShips';
+import { playersAttack } from '../helpers/commands/playerAttack';
+import { win } from '../helpers/commands/win';
 
 //const port = process.env['WS_PORT'];
 const WS_PORT = 3000
@@ -98,6 +100,58 @@ wss.on("connection", (ws: WS) => {
               });
             });
           }
+
+        if (message.type === MessageType.attack) {
+            const currentPlayerId = ws.user.userId;
+            const currentPlayerName = ws.user.name;
+            const { gameId, x, y, indexPlayer } = message.data as {
+              gameId: number;
+              x: number;
+              y: number;
+              indexPlayer: number;
+            };
+            console.log({
+              attacker: currentPlayerName,
+              indexPlayer,
+              users: storage.users,
+            });
+    
+            const { game, finish, enemyId, attacks } = playersAttack(
+              gameId,
+              currentPlayerId,
+              x,
+              y
+            );
+    
+            wss.clients.forEach((client) => {
+              const ws = client as WS;
+              if (
+                ws.user.userId !== currentPlayerId &&
+                ws.user.userId !== enemyId
+              ) {
+                return;
+              }
+              attacks.forEach((a) => {
+                const attack: IAttackResponse & { currentPlayer: 0 | 1 } = {
+                  ...a,
+                  currentPlayer: ws.user.userId === currentPlayerId ? 0 : 1,
+                };
+                sendMessage(ws, MessageType.attack, attack);
+              });
+              if (finish) {
+                win(currentPlayerName);
+                sendMessage(ws, MessageType.finish, {
+                  winPlayer: ws.user.userId === currentPlayerId ? 0 : 1,
+                });
+                return;
+              }
+              console.log({ turnId: game.turnId });
+    
+              sendMessage(ws, MessageType.turn, {
+                currentPlayer: ws.user.userId === game.turnId ? 0 : 1,
+              });
+            });
+        }
         
       } catch (error) {
         let errorMessage;
