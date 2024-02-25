@@ -11,6 +11,7 @@ import { addUserToRoom } from '../helpers/commands/addUserToRoom';
 import { addShips } from '../helpers/commands/addShips';
 import { playersAttack } from '../helpers/commands/playerAttack';
 import { win } from '../helpers/commands/win';
+import { clearSession } from '../helpers/clearSession';
 
 //const port = process.env['WS_PORT'];
 const WS_PORT = 3000
@@ -152,6 +153,50 @@ wss.on("connection", (ws: WS) => {
               });
             });
         }
+
+        if (message.type === MessageType.randomAttack) {
+            const currentPlayerId = ws.user.userId;
+            const currentPlayerName = ws.user.name;
+            const { gameId, indexPlayer } = message.data as {
+              gameId: number;
+              indexPlayer: number;
+            };
+            const { game, finish, enemyId, attacks } = playersAttack(
+              gameId,
+              currentPlayerId,
+              Math.round(Math.random() * 10),
+              Math.round(Math.random() * 10)
+            );
+    
+            wss.clients.forEach((client) => {
+              const ws = client as WS;
+              if (
+                ws.user.userId !== currentPlayerId &&
+                ws.user.userId !== enemyId
+              ) {
+                return;
+              }
+              attacks.forEach((a) => {
+                const attack: IAttackResponse & { currentPlayer: 0 | 1 } = {
+                  ...a,
+                  currentPlayer: ws.user.userId === currentPlayerId ? 0 : 1,
+                };
+                sendMessage(ws, MessageType.attack, attack);
+              });
+              if (finish) {
+                win(currentPlayerName);
+                sendMessage(ws, MessageType.finish, {
+                  winPlayer: ws.user.userId === currentPlayerId ? 0 : 1,
+                });
+                sendMessage(ws, MessageType.update_winners, storage.winners);
+                return;
+              }
+    
+              sendMessage(ws, MessageType.turn, {
+                currentPlayer: ws.user.userId === game.turnId ? 0 : 1,
+              });
+            });
+          }
         
       } catch (error) {
         let errorMessage;
@@ -164,10 +209,21 @@ wss.on("connection", (ws: WS) => {
       }
 });
   
+ws.on("close", (code, reason) => {
+    const userId = ws.user?.userId;
+    if (userId === undefined) {
+      return;
+    }
+
+    clearSession(userId);
+    console.log("Finish!")
+  });
+});
+
   wss.on("close", function close() {
     clearInterval(interval);
     console.log("Finish!")
   });
-})
+
   
 export default wss;
