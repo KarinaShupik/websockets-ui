@@ -1,0 +1,16 @@
+import { IGame, IRoom, IUser, IWin } from "./types";
+
+class Storage {
+  users: IUser[] = [];
+  userId: number = 0;
+
+  rooms: IRoom[] = [];
+  roomId: number = 0;
+
+  games: IGame[] = [];
+  gameId: number = 0;
+  
+  winners: IWin[] = [];
+}
+;
+export default new Storage();
