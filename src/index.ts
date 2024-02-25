@@ -3,7 +3,7 @@ import  wss  from './wsServer/wsServer';
 
 const HTTP_PORT = 8181;
 
-console.log(`http://localhost:${HTTP_PORT}/`);
+console.log(`http://localhost:${HTTP_PORT}`);
 httpServer.listen(HTTP_PORT);
 
 httpServer.on('upgrade', (request, socket, head) => {
